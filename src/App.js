@@ -1,4 +1,4 @@
-import React, { useState }from 'react';
+import React, { useState, useEffect, useCallback}from 'react';
 
 import MoviesList from './components/MoviesList';
 import './App.css';
@@ -11,7 +11,7 @@ function App() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
 
-  function fetchMoviesHandler() {
+  const fetchMoviesHandler = useCallback(() => { //below after useEffect, explains why we used useCallback hook
     setIsLoading(true);
     setError(null);
     //built in javascript Fetch API method
@@ -54,7 +54,18 @@ function App() {
         setError(error.message);
       });
     setIsLoading(false);
-  };
+  },[]);
+
+  //Hoisting -https://developer.mozilla.org/en-US/docs/Glossary/Hoisting
+  //make sure useEffect sits below our fetchMoviesHandler const
+  useEffect (() => { //run our fetchMovieHandler after first render
+    fetchMoviesHandler();
+  },[fetchMoviesHandler]); 
+  //because we pass the function as a dependency, when react re renders it creates a new function object,
+  //because this function is now a new object, useEffect see the function as changed even when it hasnt.
+  //we use useCallback to make the function object returned from useCallback will be the same between re-renders
+  //https://aheadcreative.co.uk/articles/when-to-use-react-usecallback/ good to know link
+
 
 //============ Alternative using async/await ===========================
 //does the same as above, instead of chaining .then()
