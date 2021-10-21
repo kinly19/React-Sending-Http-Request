@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback}from 'react';
 
 import MoviesList from './components/MoviesList';
+import AddMovie from './components/AddMovie';
 import './App.css';
 //notes
 // Sending an HTTP request is an asynchronous task....its not instant 
@@ -16,28 +17,42 @@ function App() {
     setError(null);
     //built in javascript Fetch API method
     //fetch returns a promise, which allows us to react to the response or any potential errors we might get.
-    fetch("https://swapi.dev/api/films")//api link
+    fetch("https://react-http-test-ff323-default-rtdb.europe-west1.firebasedatabase.app/movies.json")//api link
       .then((response) => {
         //response is an object with data about the response coming in from the api call (JSON)
         if (!response.ok) {
-          //if something goes wrong if the response is not ok
+          //if the response is not ok
           throw new Error("Something went wrong"); //error message to show
         }
         //no errors above, move on
         return response.json(); //data comes in as a JSON format, .json() transforms JSON response into a Javascript object we can then actually use
       })
       .then((data) => {
+        //because the data comes in as an object we want to store each object and its key pair values inside of an array
+        const loadedMovies = [];
+
+        for(const key in data){ //go through data and push each object and its key and values into own array (array object)
+          loadedMovies.push({
+            id:key,
+            title:data[key].title,
+            openingText:data[key].openingText,
+            releaseData:data[key].releaseData
+          });
+        }
+        console.log(loadedMovies)
+        setMovies(loadedMovies); //Storing data from api
+
+        //===========================================alternative mapping through an array list=====================================================
         //after transforming JSON format into a Javascript object, (.then) here we have our transformed data which can be stored somewhere (state)
-        const transformedMovies = data.results.map((movieData) => {
-          //before we store the data from an api, we can construct our own object, using only what we need from data coming from our api
-          return {
-            id: movieData.episode_id,
-            title: movieData.title,
-            openingText: movieData.opening_crawl,
-            releaseData: movieData.release_date,
-          };
-        });
-        setMovies(transformedMovies); //Storing data from api
+        // const transformedMovies = data.results.map((movieData) => {
+        //   //before we store the data from an api, we can construct our own object, using only what we need from data coming from our api
+        //   return {
+        //     id: movieData.episode_id,
+        //     title: movieData.title,
+        //     openingText: movieData.opening_crawl,
+        //     releaseData: movieData.release_date,
+        //   };
+        // });
         //Alternative from above, instead of using a helper const, map and store new object directly inside of state  
         // .then((data) => {
         //   setMovies(data.results.map(movieData => {
@@ -48,7 +63,8 @@ function App() {
         //       releaseData: movieData.release.data 
         //     }
         //   }))
-        // });  e
+        // });
+        //========================================================================================================================================
       })
       .catch((error) => {//catch any errors.
         setError(error.message);
@@ -104,6 +120,19 @@ function App() {
   //   },
   // ];
 
+  //sending a post request
+  async function addMovieHandler (movie) {
+    const response = await fetch('https://react-http-test-ff323-default-rtdb.europe-west1.firebasedatabase.app/movies.json', { //url endpoint to send to.
+      method: 'POST', //post method default is GET
+      body: JSON.stringify(movie),
+      headers: {
+        'Content-type':'application/json' //firebase doesnt need this, but most requrie this extra header
+      }
+    });
+    const data = await response.json();
+    console.log(data)
+  }
+
   //instead of writing inline checks, we can do this more elegantly.
   let content = <p>Found No Movies</p> //content variable with a default value
   //the value stored in the content variable will now differ based on the state we have.
@@ -122,6 +151,9 @@ function App() {
 
   return (
     <React.Fragment>
+      <section>
+        <AddMovie onAddMovie={addMovieHandler}/>
+      </section>
       <section>
         <button onClick={fetchMoviesHandler}>Fetch Movies</button> {/* simple button, for running api fetch function */}
       </section>
